@@ -148,12 +148,14 @@ public class GUI extends JFrame {
             double totalGrade = Grades.calculateTotalGrade(new double[]{typeGrade, accuracyGrade});
             session.checkCard(currentCard, totalGrade);
             session.getGrades().add(totalGrade);
-            if (session.getGrades().size() == session.getPerSessionCards()) {
+
+            if (session.getGrades().size() >= session.getPerSessionCards()) {
                 session.updateLevel();
             }
 
             displayCorrectAnswer(currentCard, accuracyGrade);
             cardQueue.poll();
+            updateCardList();
         }
         answerTextField.setText("");
         displayNextCard();
@@ -187,7 +189,7 @@ public class GUI extends JFrame {
 
     private void updateCardList() {
         cardListModel.clear();
-        for (Card card : session.getCards()) {
+        for (Card card : session.getAllCards()) {
             cardListModel.addElement(card.getQuestion());
         }
     }

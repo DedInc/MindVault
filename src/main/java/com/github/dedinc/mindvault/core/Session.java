@@ -2,6 +2,7 @@ package com.github.dedinc.mindvault.core;
 
 import com.github.dedinc.mindvault.core.objects.Card;
 import com.github.dedinc.mindvault.core.objects.State;
+
 import java.util.*;
 
 public class Session {
@@ -133,10 +134,7 @@ public class Session {
                 20
         );
         perSessionCards = Math.max(perSessionCards, 5);
-
-        if (grades.size() > 5) {
-            grades.remove(0);
-        }
+        grades.clear();
     }
 
     public List<Card> getCards() {
@@ -165,6 +163,16 @@ public class Session {
 
     public Map<State, List<Card>> getCategories() {
         return cards;
+    }
+
+    public List<Card> getAllCards() {
+        List<Card> allCards = new ArrayList<>();
+        for (List<Card> cards : getCategories().values()) {
+            for (Card card : cards) {
+                allCards.add(card);
+            }
+        }
+        return allCards;
     }
 
     public void setTypeSpeed(int typeSpeed) {
