@@ -1,5 +1,10 @@
 package com.github.dedinc.mindvault.core.objects;
 
+import com.github.dedinc.mindvault.core.Session;
+
+import java.util.List;
+import java.util.Map;
+
 public class Card {
     private String question;
     private String answer;
@@ -35,5 +40,15 @@ public class Card {
 
     public void setReviseDates(long[] reviseDates) {
         this.reviseDates = reviseDates;
+    }
+
+    public State getCategory(Session session) {
+        Map<State, List<Card>> categories = session.getCategories();
+        for (State state : categories.keySet()) {
+            if (categories.get(state).contains(this)) {
+                return state;
+            }
+        }
+        return null;
     }
 }

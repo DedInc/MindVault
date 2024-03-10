@@ -104,7 +104,7 @@ public class GUI extends JFrame {
         File selectedFile = FileUtils.showLoadSessionDialog(this);
         if (selectedFile != null) {
             session = FileUtils.loadSession(selectedFile);
-            session.updateCards();
+            SwingUtilities.invokeLater(() -> session.updateCards());
             updateCardList();
             statusBar.updateStatus(session);
             JOptionPane.showMessageDialog(this, "Session loaded successfully.");

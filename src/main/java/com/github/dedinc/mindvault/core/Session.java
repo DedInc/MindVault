@@ -65,21 +65,37 @@ public class Session {
 
     public void updateCards() {
         Map<State, List<Card>> cardsToMove = new HashMap<>();
+
         for (List<Card> cardList : cards.values()) {
-            Iterator<Card> iterator = cardList.iterator();
-            while (iterator.hasNext()) {
-                Card card = iterator.next();
-                if (Intervals.isReviseViolated(card.getLearnDate(), card.getReviseDates())) {
+            List<Card> learnCards = new ArrayList<>();
+            List<Card> reviseCards = new ArrayList<>();
+
+            for (Card card : cardList) {
+                State category = card.getCategory(this);
+
+                if (category == State.LEARN || category == State.REVISE) {
+                    continue;
+                }
+
+                boolean reviseViolated = Intervals.isReviseViolated(card.getLearnDate(), card.getReviseDates());
+                boolean needRevise = Intervals.needRevise(card.getLearnDate(), Arrays.stream(card.getReviseDates()).max().orElse(0));
+
+                if (reviseViolated) {
                     card.setLearnDate(0);
                     card.setReviseDates(new long[0]);
-                    iterator.remove();
-                    cardsToMove.computeIfAbsent(State.LEARN, k -> new ArrayList<>()).add(card);
-                } else if (Intervals.needRevise(card.getLearnDate(), Arrays.stream(card.getReviseDates()).max().orElse(0))) {
-                    iterator.remove();
-                    cardsToMove.computeIfAbsent(State.REVISE, k -> new ArrayList<>()).add(card);
+                    learnCards.add(card);
+                } else if (needRevise) {
+                    reviseCards.add(card);
                 }
             }
+
+            cardList.removeAll(learnCards);
+            cardList.removeAll(reviseCards);
+
+            cardsToMove.computeIfAbsent(State.LEARN, k -> new ArrayList<>()).addAll(learnCards);
+            cardsToMove.computeIfAbsent(State.REVISE, k -> new ArrayList<>()).addAll(reviseCards);
         }
+
         for (Map.Entry<State, List<Card>> entry : cardsToMove.entrySet()) {
             cards.get(entry.getKey()).addAll(entry.getValue());
         }
