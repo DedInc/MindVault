@@ -49,16 +49,12 @@ public class Session {
     }
 
     public void moveCard(Card card, State newState) {
-        State currentState = null;
-        for (Map.Entry<State, List<Card>> entry : cards.entrySet()) {
-            if (entry.getValue().stream().anyMatch(c -> c.getQuestion().equals(card.getQuestion()))) {
-                currentState = entry.getKey();
-                break;
-            }
-        }
+        State currentState = card.getCategory(this);
+
         if (currentState == newState) {
             return;
         }
+
         cards.get(currentState).removeIf(c -> c.getQuestion().equals(card.getQuestion()));
         cards.get(newState).add(card);
     }
@@ -102,13 +98,8 @@ public class Session {
     }
 
     public void checkCard(Card card, double grade) {
-        State currentState = null;
-        for (Map.Entry<State, List<Card>> entry : cards.entrySet()) {
-            if (entry.getValue().stream().anyMatch(c -> c.getQuestion().equals(card.getQuestion()))) {
-                currentState = entry.getKey();
-                break;
-            }
-        }
+        State currentState = card.getCategory(this);
+
         if (currentState == State.LEARN) {
             card.setLearnDate(Time.getUnix());
             moveCard(card, State.WEAK);

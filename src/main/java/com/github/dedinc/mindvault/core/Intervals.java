@@ -1,7 +1,7 @@
 package com.github.dedinc.mindvault.core;
 
 public class Intervals {
-    private static final int[] intervals = {1, 3, 7, 14, 30, 60, 120, 240};
+    public static final int[] intervals = {1, 3, 7, 14, 30, 60, 120, 240};
 
     public static boolean isReviseViolated(long learnDate, long[] reviseDates) {
         for (int i = 0; i < reviseDates.length; i++) {
