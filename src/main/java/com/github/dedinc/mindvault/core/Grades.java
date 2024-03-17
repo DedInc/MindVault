@@ -14,7 +14,7 @@ public class Grades {
 
     public static double calculateTypingTime(String text, int charsPerSecond, Session session) {
         double typingTime = text.length() / (double) charsPerSecond;
-        double thinkingTime = typingTime * 0.3 + calculateTotalGrade(session.getGrades()) >= 0.85 ? 3 : 5;
+        double thinkingTime = typingTime * 0.5 + calculateTotalGrade(session.getGrades()) >= 0.9 ? 3.5 : 5;
         return round(typingTime + thinkingTime);
     }
 
