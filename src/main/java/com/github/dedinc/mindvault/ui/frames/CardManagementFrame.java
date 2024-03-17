@@ -2,8 +2,6 @@ package com.github.dedinc.mindvault.ui.frames;
 
 import com.github.dedinc.mindvault.core.Session;
 import com.github.dedinc.mindvault.core.objects.Card;
-import com.github.dedinc.mindvault.ui.UIComponents;
-import com.github.dedinc.mindvault.ui.UIEvents;
 import com.github.dedinc.mindvault.utils.FileUtils;
 
 import javax.swing.*;
@@ -26,16 +24,16 @@ public class CardManagementFrame extends JFrame {
     private void initComponents() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setTitle("MindVault - Card Management");
-        setPreferredSize(new Dimension(400, 300));
+        setPreferredSize(new Dimension(500, 300));
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout());
-        addCardButton = UIComponents.createAddCardButton();
-        addCardsFromFileButton = UIComponents.createAddCardsFromFileButton();
-        removeCardButton = UIComponents.createRemoveCardButton();
+        addCardButton = new JButton("Add card");
+        addCardsFromFileButton = new JButton("Add cards from file");
+        removeCardButton = new JButton("Remove selected cards");
         buttonPanel.add(addCardButton);
         buttonPanel.add(addCardsFromFileButton);
         buttonPanel.add(removeCardButton);
@@ -49,9 +47,9 @@ public class CardManagementFrame extends JFrame {
         add(mainPanel);
         pack();
 
-        UIEvents.addAddCardButtonActionListener(addCardButton, this::addCard);
-        UIEvents.addAddCardsFromFileButtonActionListener(addCardsFromFileButton, this::addCardsFromFile);
-        UIEvents.addRemoveCardButtonActionListener(removeCardButton, this::deleteSelectedCard);
+        addCardButton.addActionListener(e -> addCard());
+        addCardsFromFileButton.addActionListener(e -> addCardsFromFile());
+        removeCardButton.addActionListener(e -> deleteSelectedCard());
 
         updateCardList();
     }

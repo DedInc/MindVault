@@ -6,10 +6,12 @@ import com.github.dedinc.mindvault.core.Time;
 import com.github.dedinc.mindvault.core.objects.Card;
 import com.github.dedinc.mindvault.ui.StatusBar;
 import com.github.dedinc.mindvault.ui.UIComponents;
-import com.github.dedinc.mindvault.ui.UIEvents;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -20,6 +22,7 @@ public class SessionFrame extends JFrame {
     private JButton submitButton;
     private Queue<Card> cardQueue;
     private StatusBar statusBar;
+    private long startTime;
 
     public SessionFrame(Session session) {
         this.session = session;
@@ -34,14 +37,15 @@ public class SessionFrame extends JFrame {
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
 
-        questionTextArea = UIComponents.createQuestionTextArea();
+        questionTextArea = new JTextArea();
+        questionTextArea.setEditable(false);
         JScrollPane questionScrollPane = new JScrollPane(questionTextArea);
         mainPanel.add(questionScrollPane, BorderLayout.CENTER);
 
         JPanel answerPanel = new JPanel();
         answerPanel.setLayout(new FlowLayout());
-        answerTextField = UIComponents.createAnswerTextField();
-        submitButton = UIComponents.createSubmitButton();
+        answerTextField = new JTextField(20);
+        submitButton = new JButton("Submit");
         answerPanel.add(answerTextField);
         answerPanel.add(submitButton);
         mainPanel.add(answerPanel, BorderLayout.SOUTH);
@@ -52,8 +56,16 @@ public class SessionFrame extends JFrame {
         answerTextField.setEnabled(false);
         submitButton.setEnabled(false);
 
-        UIEvents.addAnswerTextFieldKeyListener(answerTextField, this::submitAnswer);
-        UIEvents.addSubmitButtonActionListener(submitButton, this::submitAnswer);
+        answerTextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    submitAnswer();
+                }
+            }
+        });
+
+        submitButton.addActionListener(e -> submitAnswer());
 
         statusBar = new StatusBar();
         add(statusBar, BorderLayout.SOUTH);
@@ -82,11 +94,10 @@ public class SessionFrame extends JFrame {
         String answer = answerTextField.getText();
         Card currentCard = cardQueue.peek();
         if (currentCard != null) {
-            long startTime = Time.getUnix();
-            double maxTime = Grades.calculateTypingTime(currentCard.getAnswer(), session.getTypeSpeed());
+            double maxTime = Grades.calculateTypingTime(currentCard.getAnswer(), session.getTypeSpeed(), session);
             double typeGrade = Grades.calculateTypeGrade(Time.getUnix() - startTime, maxTime);
             double accuracyGrade = Grades.calculateStringsRatio(currentCard.getAnswer(), answer);
-            double totalGrade = Grades.calculateTotalGrade(new double[]{typeGrade, accuracyGrade});
+            double totalGrade = Grades.calculateTotalGrade(Arrays.asList(typeGrade, accuracyGrade));
             session.checkCard(currentCard, totalGrade);
             session.getGrades().add(totalGrade);
             if (session.getGrades().size() >= session.getPerSessionCards()) {
@@ -113,6 +124,7 @@ public class SessionFrame extends JFrame {
     }
 
     private void displayNextCard() {
+        startTime = Time.getUnix();
         Card nextCard = cardQueue.peek();
         if (nextCard != null) {
             questionTextArea.setText(nextCard.getQuestion());

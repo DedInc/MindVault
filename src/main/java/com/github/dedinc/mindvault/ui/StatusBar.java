@@ -2,12 +2,14 @@ package com.github.dedinc.mindvault.ui;
 
 import com.github.dedinc.mindvault.core.Grades;
 import com.github.dedinc.mindvault.core.Session;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class StatusBar extends JPanel {
     private JLabel cardsLearnedLabel;
     private JLabel totalGradeLabel;
+
 
     public StatusBar() {
         setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -19,12 +21,12 @@ public class StatusBar extends JPanel {
 
     public void updateStatus(Session session) {
         int cardsLearned = session.getPerSessionCards();
-        double[] gradesArray = session.getGrades().stream().mapToDouble(Double::doubleValue).toArray();
-        double totalGrade = Grades.calculateTotalGrade(gradesArray);
+        double totalGrade = Grades.calculateTotalGrade(session.getGrades());
 
         cardsLearnedLabel.setText("Learn per session: " + cardsLearned);
 
         totalGradeLabel.setText("Total Grade: " + String.format("%.2f", totalGrade));
+
         Color gradeColor;
         if (totalGrade >= 0.8) {
             gradeColor = Color.GREEN;

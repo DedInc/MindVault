@@ -1,43 +1,20 @@
 package com.github.dedinc.mindvault.ui;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
 
 public class UIComponents {
-    public static JTextArea createQuestionTextArea() {
-        JTextArea questionTextArea = new JTextArea();
-        questionTextArea.setEditable(false);
-        return questionTextArea;
+
+    public static JButton createButtonWithEvent(String text, ActionListener listener) {
+        JButton button = new JButton(text);
+        button.addActionListener(listener);
+        return button;
     }
 
-    public static JTextField createAnswerTextField() {
-        return new JTextField(20);
-    }
-
-    public static JButton createSubmitButton() {
-        return new JButton("Submit");
-    }
-
-    public static JButton createAddCardButton() {
-        return new JButton("Add Card");
-    }
-
-    public static JButton createAddCardsFromFileButton() {
-        return new JButton("Add Cards from File");
-    }
-
-    public static JButton createRemoveCardButton() {
-        return new JButton("Remove Card");
-    }
-
-    public static JButton createSaveSessionButton() {
-        return new JButton("Save Session");
-    }
-
-    public static JButton createLoadSessionButton() {
-        return new JButton("Load Session");
-    }
-
-    public static JButton createStartSessionButton() {
-        return new JButton("Start/Create Session");
+    public static JLabel createLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        return label;
     }
 }

@@ -10,7 +10,7 @@ tasks.withType(JavaCompile) {
 }
 
 group 'com.github.dedinc.mindvault'
-version '1.1'
+version '1.2'
 
 repositories {
     mavenCentral()

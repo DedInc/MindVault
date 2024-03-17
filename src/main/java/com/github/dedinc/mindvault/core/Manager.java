@@ -5,11 +5,13 @@ import com.github.dedinc.mindvault.core.objects.State;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +20,8 @@ public class Manager {
         JSONObject json = new JSONObject();
         json.put("typeSpeed", session.getTypeSpeed());
         json.put("perSessionCards", session.getPerSessionCards());
+        json.put("completedBlocks", session.getPomodoroTimer().getCompletedBlocks());
+        json.put("lastTrainingDate", session.getPomodoroTimer().getLastTrainingDate().toString());
 
         JSONObject cardsJson = new JSONObject();
         for (Map.Entry<State, List<Card>> entry : session.getCategories().entrySet()) {
@@ -48,11 +52,12 @@ public class Manager {
     public static Session loadSession(String filename) {
         try (FileReader reader = new FileReader(filename)) {
             JSONObject json = new JSONObject(new JSONTokener(reader));
-
             int typeSpeed = json.getInt("typeSpeed");
             int perSessionCards = json.getInt("perSessionCards");
+            int completedBlocks = json.getInt("completedBlocks");
+            LocalDate lastTrainingDate = LocalDate.parse(json.getString("lastTrainingDate"));
 
-            Map<State, List<Card>> cards = new HashMap<>();
+            Map<State, List<Card>> cards = new EnumMap<>(State.class);
             JSONObject cardsJson = json.getJSONObject("cards");
             for (String stateStr : cardsJson.keySet()) {
                 State state = State.valueOf(stateStr);
@@ -85,7 +90,8 @@ public class Manager {
             session.setCards(cards);
             session.setGrades(grades);
             session.setPerSessionCards(perSessionCards);
-
+            session.getPomodoroTimer().setCompletedBlocks(completedBlocks);
+            session.getPomodoroTimer().setLastTrainingDate(lastTrainingDate);
             return session;
         } catch (IOException e) {
             System.out.println("Error loading session: " + e.getMessage());

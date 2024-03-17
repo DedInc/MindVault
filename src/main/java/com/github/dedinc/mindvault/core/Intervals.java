@@ -5,10 +5,7 @@ public class Intervals {
 
     public static boolean isReviseViolated(long learnDate, long[] reviseDates) {
         for (int i = 0; i < reviseDates.length; i++) {
-            long currentDate = i == 0 ? learnDate : reviseDates[i - 1];
-            long daysSinceLearning = (Time.getUnix() - learnDate) / 86400;
             long daysSinceRevision = (reviseDates[i] - learnDate) / 86400;
-            long daysSinceLearningToRevision = daysSinceLearning - daysSinceRevision;
             for (int interval : intervals) {
                 if (daysSinceRevision > Math.round(interval + interval / 3.0)) {
                     return true;

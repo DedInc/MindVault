@@ -10,12 +10,14 @@ public class Card {
     private String answer;
     private long learnDate;
     private long[] reviseDates;
+    private State cachedCategory;
 
     public Card(String question, String answer, long learnDate, long[] reviseDates) {
         this.question = question;
         this.answer = answer;
         this.learnDate = learnDate;
         this.reviseDates = reviseDates;
+        this.cachedCategory = null;
     }
 
     public String getQuestion() {
@@ -32,6 +34,7 @@ public class Card {
 
     public void setLearnDate(long learnDate) {
         this.learnDate = learnDate;
+        this.cachedCategory = null;
     }
 
     public long[] getReviseDates() {
@@ -40,15 +43,19 @@ public class Card {
 
     public void setReviseDates(long[] reviseDates) {
         this.reviseDates = reviseDates;
+        this.cachedCategory = null;
     }
 
     public State getCategory(Session session) {
-        Map<State, List<Card>> categories = session.getCategories();
-        for (State state : categories.keySet()) {
-            if (categories.get(state).contains(this)) {
-                return state;
+        if (cachedCategory == null) {
+            Map<State, List<Card>> categories = session.getCategories();
+            for (State state : categories.keySet()) {
+                if (categories.get(state).contains(this)) {
+                    cachedCategory = state;
+                    break;
+                }
             }
         }
-        return null;
+        return cachedCategory;
     }
 }

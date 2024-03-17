@@ -1,7 +1,9 @@
 package com.github.dedinc.mindvault.ui.frames;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import com.github.dedinc.mindvault.core.PomodoroTimer;
 import com.github.dedinc.mindvault.core.Session;
+import com.github.dedinc.mindvault.ui.UIComponents;
 import com.github.dedinc.mindvault.ui.UITheme;
 import com.github.dedinc.mindvault.utils.FileUtils;
 
@@ -20,6 +22,12 @@ public class MainMenuFrame extends JFrame {
     private Session session;
     SessionFrame sessionFrame;
 
+    private Timer pomodoroTimer;
+    private int remainingTime;
+    private JLabel pomodoroStatusLabel;
+
+    private JLabel pomodoroInfoLabel;
+
     public MainMenuFrame() {
         FlatLightLaf.setup();
         initComponents();
@@ -28,49 +36,37 @@ public class MainMenuFrame extends JFrame {
     private void initComponents() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setTitle("MindVault - Main Menu");
-        setPreferredSize(new Dimension(530, 400));
+        setPreferredSize(new Dimension(600, 500));
 
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new GridBagLayout());
+        JTabbedPane tabbedPane = new JTabbedPane();
+
+        JPanel sessionPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        createSessionButton = new JButton("Create Session");
-        createSessionButton.addActionListener(e -> createSession());
-        mainPanel.add(createSessionButton, gbc);
+        createSessionButton = UIComponents.createButtonWithEvent("Create Session", e -> createSession());
+        sessionPanel.add(createSessionButton, gbc);
 
-        loadSessionButton = new JButton("Load Session");
-        loadSessionButton.addActionListener(e -> loadSession());
-        mainPanel.add(loadSessionButton, gbc);
+        loadSessionButton = UIComponents.createButtonWithEvent("Load Session", e -> loadSession());
+        sessionPanel.add(loadSessionButton, gbc);
 
-        saveSessionButton = new JButton("Save Session");
-        saveSessionButton.addActionListener(e -> {
+        saveSessionButton = UIComponents.createButtonWithEvent("Save Session", e -> {
             File sessionFile = FileUtils.showSaveSessionDialog(this);
             if (sessionFile != null) {
                 FileUtils.saveSession(session, sessionFile);
             }
-         }
-        );
-        mainPanel.add(saveSessionButton, gbc);
+        });
         saveSessionButton.setEnabled(false);
+        sessionPanel.add(saveSessionButton, gbc);
 
-        startSessionButton = new JButton("Start Session");
-        startSessionButton.addActionListener(e -> openSessionFrame());
-        mainPanel.add(startSessionButton, gbc);
+        startSessionButton = UIComponents.createButtonWithEvent("Start Session", e -> openSessionFrame());
         startSessionButton.setEnabled(false);
+        sessionPanel.add(startSessionButton, gbc);
 
-        manageCardsButton = new JButton("Manage Cards");
-        manageCardsButton.addActionListener(e -> openCardManagementFrame());
-        manageCardsButton.setEnabled(false);
-        mainPanel.add(manageCardsButton, gbc);
-
-        showForgettingGraphButton = new JButton("Show Forgetting Graph");
-        showForgettingGraphButton.addActionListener(e -> openForgettingGraphFrame());
-        showForgettingGraphButton.setEnabled(false);
-        mainPanel.add(showForgettingGraphButton, gbc);
-
+        JPanel themePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        themePanel.add(new JLabel("Theme:"));
         themeComboBox = UITheme.createThemeComboBox();
         String[] previousSelectedItem = {"Arc"};
         themeComboBox.addActionListener(e -> {
@@ -88,11 +84,75 @@ public class MainMenuFrame extends JFrame {
             UITheme.changeTheme();
         });
 
-        mainPanel.add(themeComboBox, gbc);
+        themePanel.add(themeComboBox);
+        sessionPanel.add(themePanel, gbc);
 
-        add(mainPanel);
+        JPanel pomodoroPanel = new JPanel(new GridBagLayout());
+        pomodoroStatusLabel = UIComponents.createLabel("");
+        pomodoroPanel.add(pomodoroStatusLabel, gbc);
+        pomodoroInfoLabel = UIComponents.createLabel("");
+        pomodoroPanel.add(pomodoroInfoLabel, gbc);
+        sessionPanel.add(pomodoroPanel, gbc);
+
+        tabbedPane.addTab("Session", sessionPanel);
+
+        JPanel cardsPanel = new JPanel(new GridBagLayout());
+
+        manageCardsButton = UIComponents.createButtonWithEvent("Manage Cards", e -> openCardManagementFrame());
+        manageCardsButton.setEnabled(false);
+        cardsPanel.add(manageCardsButton, gbc);
+
+        showForgettingGraphButton = UIComponents.createButtonWithEvent("Show Forgetting Graph", e -> openForgettingGraphFrame());
+        showForgettingGraphButton.setEnabled(false);
+        cardsPanel.add(showForgettingGraphButton, gbc);
+
+        tabbedPane.addTab("Cards/Graph", cardsPanel);
+
+        setLayout(new BorderLayout());
+        add(tabbedPane, BorderLayout.CENTER);
+
         pack();
         UITheme.setTheme(UITheme.getThemeCache().get("Arc"));
+    }
+
+    private void startPomodoroTimer() {
+        remainingTime = session.getPomodoroTimer().getCurrentInterval() * 60;
+        pomodoroTimer = new Timer(1000, e -> {
+            remainingTime--;
+            updatePomodoroStatus();
+
+            if (remainingTime <= 0) {
+                pomodoroTimer.stop();
+                session.getPomodoroTimer().nextInterval();
+                startPomodoroTimer();
+            }
+        });
+        pomodoroTimer.start();
+    }
+
+    private void updatePomodoroStatus() {
+        int minutes = remainingTime / 60;
+        int seconds = remainingTime % 60;
+
+        String status;
+        if (session.getPomodoroTimer().isBreakInterval()) {
+            status = String.format("Break Time: %02d:%02d", minutes, seconds);
+        } else {
+            status = String.format("Pomodoro: %02d:%02d", minutes, seconds);
+        }
+        pomodoroStatusLabel.setText(status);
+
+        String info;
+        if (session.getPomodoroTimer().isBreakInterval()) {
+            info = "Take a short break and relax.";
+        } else {
+            int completedBlocks = session.getPomodoroTimer().getCompletedBlocks();
+            int remainingBlocks = PomodoroTimer.MAX_BLOCKS_PER_DAY - completedBlocks;
+            info = String.format("Completed Blocks: %d, Remaining Blocks: %d", completedBlocks, remainingBlocks);
+        }
+        pomodoroInfoLabel.setText(info);
+
+        startSessionButton.setEnabled(session.getPomodoroTimer().canStartSession());
     }
 
     private void createSession() {
@@ -101,6 +161,7 @@ public class MainMenuFrame extends JFrame {
         startSessionButton.setEnabled(true);
         saveSessionButton.setEnabled(true);
         showForgettingGraphButton.setEnabled(true);
+        startPomodoroTimer();
     }
 
     private void openForgettingGraphFrame() {
@@ -116,6 +177,7 @@ public class MainMenuFrame extends JFrame {
             startSessionButton.setEnabled(true);
             saveSessionButton.setEnabled(true);
             showForgettingGraphButton.setEnabled(true);
+            startPomodoroTimer();
         }
     }
 
