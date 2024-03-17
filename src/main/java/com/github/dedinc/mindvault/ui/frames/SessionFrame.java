@@ -5,7 +5,6 @@ import com.github.dedinc.mindvault.core.Session;
 import com.github.dedinc.mindvault.core.Time;
 import com.github.dedinc.mindvault.core.objects.Card;
 import com.github.dedinc.mindvault.ui.StatusBar;
-import com.github.dedinc.mindvault.ui.UIComponents;
 
 import javax.swing.*;
 import java.awt.*;

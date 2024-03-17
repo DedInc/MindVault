@@ -7,7 +7,7 @@ public class Intervals {
         for (int i = 0; i < reviseDates.length; i++) {
             long daysSinceRevision = (reviseDates[i] - learnDate) / 86400;
             for (int interval : intervals) {
-                if (daysSinceRevision > Math.round(interval + interval / 3.0)) {
+                if (daysSinceRevision > Math.round(interval + interval / 3.5)) {
                     return true;
                 }
             }

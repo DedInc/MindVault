@@ -93,7 +93,7 @@ public class ForgettingGraphFrame extends JFrame {
             long futureRevisionDate = (long) (lastRevisionDate + intervals[i] * 86400);
             if (futureRevisionDate > currentDate) {
                 futureRevisionSeries.addOrUpdate(new Day(new Date(futureRevisionDate * 1000L)), 100);
-                violationSeries.addOrUpdate(new Day(new Date((futureRevisionDate + (long) (intervals[i] * 86400 / 3)) * 1000L)), 100);
+                violationSeries.addOrUpdate(new Day(new Date((futureRevisionDate + (long) (intervals[i] * 86400 / 3.5)) * 1000L)), 100);
                 break;
             }
             lastRevisionDate = futureRevisionDate;

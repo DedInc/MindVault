@@ -157,6 +157,7 @@ public class MainMenuFrame extends JFrame {
 
     private void createSession() {
         session = FileUtils.createNewSession();
+        session.updateCards();
         manageCardsButton.setEnabled(true);
         startSessionButton.setEnabled(true);
         saveSessionButton.setEnabled(true);
@@ -173,6 +174,7 @@ public class MainMenuFrame extends JFrame {
         File selectedFile = FileUtils.showLoadSessionDialog(this);
         if (selectedFile != null) {
             session = FileUtils.loadSession(selectedFile);
+            session.updateCards();
             manageCardsButton.setEnabled(true);
             startSessionButton.setEnabled(true);
             saveSessionButton.setEnabled(true);

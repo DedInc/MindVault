@@ -4,14 +4,12 @@ import com.github.dedinc.mindvault.core.objects.Card;
 import com.github.dedinc.mindvault.core.objects.State;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Session {
     private int typeSpeed;
     private Map<State, List<Card>> cards;
     private List<Double> grades;
     private int perSessionCards;
-    private List<Card> allCardsCache;
 
     private PomodoroTimer pomodoroTimer;
 
@@ -27,14 +25,12 @@ public class Session {
         }
         this.grades = new ArrayList<>();
         this.perSessionCards = 5;
-        this.allCardsCache = null;
         this.pomodoroTimer = new PomodoroTimer();
     }
 
     public void addCard(String question, String answer) {
         Card newCard = new Card(question, answer, 0, new long[0]);
         cards.get(State.LEARN).add(newCard);
-        invalidateAllCardsCache();
     }
 
     public void addCards(List<Card> cards) {
@@ -47,7 +43,6 @@ public class Session {
         for (List<Card> cardList : cards.values()) {
             cardList.removeIf(card -> card.getQuestion().equals(question));
         }
-        invalidateAllCardsCache();
     }
 
     public void removeCards(List<String> questions) {
@@ -58,12 +53,15 @@ public class Session {
 
     public void moveCard(Card card, State newState) {
         State currentState = card.getCategory(this);
+
         if (currentState == newState) {
             return;
         }
-        cards.get(currentState).removeIf(c -> c.getQuestion().equals(card.getQuestion()));
+
+        for (State category : Arrays.asList(State.REVISE, State.WEAK, State.MIDDLE, State.LEARN)) {
+            cards.get(category).removeIf(c -> c.getQuestion().equals(card.getQuestion()));
+        }
         cards.get(newState).add(card);
-        invalidateAllCardsCache();
     }
 
     public void updateCards() {
@@ -94,21 +92,22 @@ public class Session {
         for (Map.Entry<State, List<Card>> entry : cardsToMove.entrySet()) {
             cards.get(entry.getKey()).addAll(entry.getValue());
         }
-        invalidateAllCardsCache();
     }
 
     public void checkCard(Card card, double grade) {
         State currentState = card.getCategory(this);
+
         if (currentState == State.LEARN) {
             card.setLearnDate(Time.getUnix());
             moveCard(card, State.WEAK);
             return;
         }
         if (currentState == State.REVISE) {
-            List<Long> reviseDates = new ArrayList<>(Arrays.asList(Arrays.stream(card.getReviseDates()).boxed().toArray(Long[]::new)));
-            reviseDates.add(Time.getUnix());
-            card.setReviseDates(reviseDates.stream().mapToLong(Long::longValue).toArray());
-            if (reviseDates.size() == 1) {
+            int revises = card.getReviseDates().length;
+            long[] newReviseDates = Arrays.copyOf(card.getReviseDates(), revises + 1);
+            newReviseDates[revises] = Time.getUnix();
+            card.setReviseDates(newReviseDates);
+            if (revises == 0) {
                 moveCard(card, State.WEAK);
             } else {
                 moveCard(card, grade >= 0.80 ? State.STRONG : grade <= 0.6 ? State.WEAK : State.MIDDLE);
@@ -121,27 +120,22 @@ public class Session {
         }
         if (currentState == State.MIDDLE) {
             if (grade >= 0.85) {
+                System.out.println("Move...");
                 moveCard(card, State.STRONG);
             } else if (grade < 0.6) {
                 moveCard(card, State.WEAK);
             }
-            return;
-        }
-        if (currentState == State.STRONG && grade <= 0.8) {
-            moveCard(card, State.MIDDLE);
         }
     }
 
     public void updateLevel() {
-        if (!grades.isEmpty()) {
-            double grade = Grades.calculateTotalGrade(grades);
-            perSessionCards = Math.min(
-                    grade >= 0.9 ? perSessionCards + 3 : grade >= 0.75 ? perSessionCards + 2 : grade <= 0.6 ? perSessionCards - 1 : perSessionCards,
-                    10
-            );
-            perSessionCards = Math.max(perSessionCards, 5);
-            grades.clear();
-        }
+        double grade = Grades.calculateTotalGrade(grades);
+        perSessionCards = Math.min(
+                grade >= 0.9 ? perSessionCards + 3 : grade >= 0.75 ? perSessionCards + 2 : grade <= 0.6 ? perSessionCards - 1 : perSessionCards,
+                10
+        );
+        perSessionCards = Math.max(perSessionCards, 5);
+        grades.clear();
     }
 
     public List<Card> getCards() {
@@ -173,10 +167,13 @@ public class Session {
     }
 
     public List<Card> getAllCards() {
-        if (allCardsCache == null) {
-            allCardsCache = cards.values().stream().flatMap(List::stream).collect(Collectors.toList());
+        List<Card> allCards = new ArrayList<>();
+        for (List<Card> cards : getCategories().values()) {
+            for (Card card : cards) {
+                allCards.add(card);
+            }
         }
-        return allCardsCache;
+        return allCards;
     }
 
     public void setTypeSpeed(int typeSpeed) {
@@ -185,7 +182,6 @@ public class Session {
 
     public void setCards(Map<State, List<Card>> cards) {
         this.cards = cards;
-        invalidateAllCardsCache();
     }
 
     public void setGrades(List<Double> grades) {
@@ -194,10 +190,6 @@ public class Session {
 
     public void setPerSessionCards(int perSessionCards) {
         this.perSessionCards = perSessionCards;
-    }
-
-    private void invalidateAllCardsCache() {
-        allCardsCache = null;
     }
 
     public PomodoroTimer getPomodoroTimer() {
