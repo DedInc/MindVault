@@ -15,18 +15,27 @@ public class Intervals {
         return false;
     }
 
-    public static boolean needRevise(long learnDate, long reviseDate) {
+    public static boolean needRevise(long learnDate, long[] reviseDates) {
         long currentDate = Time.getUnix();
         long daysSinceLearning = (currentDate - learnDate) / 86400;
-        long daysSinceLastRevision = (currentDate - reviseDate) / 86400;
-        long daysSinceLearningToRevision = daysSinceLearning - daysSinceLastRevision;
+
         int currentInterval = 0;
-        for (int interval : intervals) {
-            if (daysSinceLearningToRevision <= interval) {
-                currentInterval = interval;
-                break;
+        int revisionCount = reviseDates.length;
+
+        if (revisionCount > 0) {
+            long lastRevisionDate = reviseDates[revisionCount - 1];
+            long daysSinceLastRevision = (currentDate - lastRevisionDate) / 86400;
+
+            if (revisionCount < intervals.length) {
+                currentInterval = intervals[revisionCount];
+            } else {
+                currentInterval = intervals[intervals.length - 1];
             }
+
+            return daysSinceLastRevision >= currentInterval;
+        } else {
+            currentInterval = intervals[0];
+            return daysSinceLearning >= currentInterval;
         }
-        return daysSinceLastRevision >= currentInterval;
     }
 }

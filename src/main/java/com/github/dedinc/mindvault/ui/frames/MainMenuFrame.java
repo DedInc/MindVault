@@ -157,7 +157,6 @@ public class MainMenuFrame extends JFrame {
 
     private void createSession() {
         session = FileUtils.createNewSession();
-        session.updateCards();
         manageCardsButton.setEnabled(true);
         startSessionButton.setEnabled(true);
         saveSessionButton.setEnabled(true);

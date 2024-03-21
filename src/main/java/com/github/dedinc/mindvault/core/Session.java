@@ -53,11 +53,9 @@ public class Session {
 
     public void moveCard(Card card, State newState) {
         State currentState = card.getCategory(this);
-
         if (currentState == newState) {
             return;
         }
-
         for (State category : Arrays.asList(State.REVISE, State.WEAK, State.MIDDLE, State.LEARN)) {
             cards.get(category).removeIf(c -> c.getQuestion().equals(card.getQuestion()));
         }
@@ -65,32 +63,26 @@ public class Session {
     }
 
     public void updateCards() {
-        Map<State, List<Card>> cardsToMove = new EnumMap<>(State.class);
-        for (List<Card> cardList : cards.values()) {
-            List<Card> learnCards = new ArrayList<>();
-            List<Card> reviseCards = new ArrayList<>();
-            for (Card card : cardList) {
-                State category = card.getCategory(this);
+        for (State category : cards.keySet()) {
+            List<Card> categoryCards = cards.get(category);
+            List<Card> tempCards = new ArrayList<>();
+            for (Card tempCard : categoryCards) {
+                tempCards.add(tempCard);
+            }
+            for (Card card : tempCards) {
                 if (category == State.LEARN || category == State.REVISE) {
                     continue;
                 }
                 boolean reviseViolated = Intervals.isReviseViolated(card.getLearnDate(), card.getReviseDates());
-                boolean needRevise = Intervals.needRevise(card.getLearnDate(), Arrays.stream(card.getReviseDates()).max().orElse(0));
+                boolean needRevise = Intervals.needRevise(card.getLearnDate(), card.getReviseDates());
                 if (reviseViolated) {
                     card.setLearnDate(0);
                     card.setReviseDates(new long[0]);
-                    learnCards.add(card);
+                    moveCard(card, State.LEARN);
                 } else if (needRevise) {
-                    reviseCards.add(card);
+                    moveCard(card, State.REVISE);
                 }
             }
-            cardList.removeAll(learnCards);
-            cardList.removeAll(reviseCards);
-            cardsToMove.computeIfAbsent(State.LEARN, k -> new ArrayList<>()).addAll(learnCards);
-            cardsToMove.computeIfAbsent(State.REVISE, k -> new ArrayList<>()).addAll(reviseCards);
-        }
-        for (Map.Entry<State, List<Card>> entry : cardsToMove.entrySet()) {
-            cards.get(entry.getKey()).addAll(entry.getValue());
         }
     }
 
@@ -140,13 +132,33 @@ public class Session {
 
     public List<Card> getCards() {
         List<Card> selectedCards = new ArrayList<>();
-        for (State category : Arrays.asList(State.REVISE, State.WEAK, State.MIDDLE, State.LEARN)) {
-            List<Card> sourceCards = new ArrayList<>(cards.get(category));
-            int limit = Math.min(perSessionCards - selectedCards.size(), sourceCards.size());
-            if (selectedCards.size() < perSessionCards && !sourceCards.isEmpty()) {
-                selectedCards.addAll(sourceCards.subList(0, limit));
+        boolean hasCardsToReview = !cards.get(State.REVISE).isEmpty() || !cards.get(State.WEAK).isEmpty() || !cards.get(State.MIDDLE).isEmpty();
+
+        if (hasCardsToReview) {
+            for (State category : Arrays.asList(State.REVISE, State.WEAK, State.MIDDLE)) {
+                List<Card> sourceCards = new ArrayList<>(cards.get(category));
+                int limit = Math.min(perSessionCards - selectedCards.size(), sourceCards.size());
+                if (selectedCards.size() < perSessionCards && !sourceCards.isEmpty()) {
+                    selectedCards.addAll(sourceCards.subList(0, limit));
+                }
+            }
+        } else {
+            List<Card> sourceCards = new ArrayList<>(cards.get(State.LEARN));
+            int learnedToday = (int) sourceCards.stream()
+                    .filter(card -> Time.isToday(card.getLearnDate()))
+                    .count();
+
+            if (learnedToday < 100) {
+                int limit = Math.min(perSessionCards - selectedCards.size(), sourceCards.size());
+                int remainingQuota = 100 - learnedToday;
+                int newCardsToLearn = Math.min(limit, remainingQuota);
+
+                if (selectedCards.size() < perSessionCards && !sourceCards.isEmpty()) {
+                    selectedCards.addAll(sourceCards.subList(0, newCardsToLearn));
+                }
             }
         }
+
         return selectedCards;
     }
 
